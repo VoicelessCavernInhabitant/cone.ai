@@ -1,5 +1,6 @@
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
+ctx.globalCompositeOperation = "destination-over";
 const a = (2 * Math.PI) / 6;
 
 function drawHexagon(x, y, r) {
@@ -105,16 +106,52 @@ function left(pos) {
   return 0;
 }
 
-function findCords(startx, starty, pos, size) {
-  let row = getRow(pos);
-  let posOnRow =
-    17 - Math.abs(row - 9) - ((26 - Math.abs(row - 9)) * row) / 2 + pos;
+function posOnRow(pos) {
+  var row = getRow(pos);
+  var xtraSqr = 0;
+  for (let i = 1; i <= row; i++) {
+    xtraSqr += 8 - Math.abs(9 - i);
+  }
+  return pos - (9 * row + xtraSqr) + (17 - Math.abs(9 - row));
+}
 
-  let x =
-    -(((8 - Math.abs(row - 9)) * size * Math.sqrt(3)) / 2) +
-    (posOnRow - 1) * size * Math.sqrt(3);
-  let y = size * row - size;
-  return [x + startx, starty - y];
+function findCords(pos, startx, starty, size) {
+  let x, y;
+  let row = getRow(pos);
+  x =
+    Math.sqrt(3) *
+      size *
+      (posOnRow(pos) - (8 - Math.abs(9 - row)) / 2 - 1 / 3) +
+    startx;
+  y = starty - ((row - 1 / 2) * size * 3) / 2;
+  return [x, y];
+}
+
+function loadPieces() {
+  pieceList.forEach((value, key) => {
+    const [first, second] = findCords(key, x, y, radius);
+    console.log(first, second);
+    value.img.addEventListener("load", () => {
+      ctx.drawImage(value.img, first, second, radius, radius);
+    });
+  });
+}
+
+function displayMoves(selectedPiece) {
+  selectedPiece.validMoves.forEach((move) => {
+    const [first, second] = findCords(move, x, y, radius);
+    ctx.beginPath();
+    ctx.arc(
+      first + (radius * Math.sqrt(3)) / 3,
+      second + radius / 1.5,
+      15,
+      0,
+      2 * Math.PI,
+    );
+    ctx.fillStyle = "black";
+    ctx.fill();
+    console.log(move);
+  });
 }
 
 class Piece {
@@ -136,14 +173,14 @@ class Piece {
 
   isFriendPiece(pos) {
     if (pieceList.has(pos)) {
-      if (pieceList[pos].side == this.side) return true;
+      if (pieceList.get(pos).side == this.side) return true;
     }
     return false;
   }
 
   isEnemyPiece(pos) {
     if (pieceList.has(pos)) {
-      if (pieceList[pos].side != this.side) return true;
+      if (pieceList.get(pos).side != this.side) return true;
     }
     return false;
   }
@@ -176,6 +213,8 @@ class Pawn2 extends Piece {
   constructor(side) {
     super(side);
     this.name = "Pawn the Second";
+    this.img = new Image();
+    this.img.src = "./assets/Pavel2.png";
   }
 
   getMoves(pos) {
@@ -201,25 +240,16 @@ const y = 800;
 drawField(x, y, 30);
 
 pawn1 = new Pawn1("white");
+pawn2 = new Pawn2("black");
+pawn1_2 = new Pawn1("black");
+pawn1_3 = new Pawn1("white");
 
-pieceList.set(1, pawn1);
-pieceList.set(42, pawn1);
-pieceList.set(69, pawn1);
-pieceList.set(128, pawn1);
+pieceList.set(60, pawn1);
+pieceList.set(42, pawn2);
+pieceList.set(100, pawn1_2);
+pieceList.set(54, pawn1_3);
 
-function loadPieces() {
-  for (let i in pieceList) {
-    const [first, second] = findCords(x, y, i, radius);
-    img.addEventListener("load", () => {
-      ctx.drawImage(value.img, 0, 0);
-    });
-  }
-}
+loadPieces();
 
-pieceList.forEach((value, key) => {
-  const [first, second] = findCords(x, y, key, radius);
-  console.log(first, second);
-  value.img.addEventListener("load", () => {
-    ctx.drawImage(value.img, first, second, radius, radius);
-  });
-});
+pawn2.getMoves(42);
+displayMoves(pawn2);
