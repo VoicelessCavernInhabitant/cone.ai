@@ -124,22 +124,36 @@ function findCords(pos, startx, starty, size) {
       (posOnRow(pos) - (8 - Math.abs(9 - row)) / 2 - 1 / 3) +
     startx;
   y = starty - ((row - 1 / 2) * size * 3) / 2;
+
   return [x, y];
+}
+
+function findPosFromCords(x, y, startx, starty, size) {
+  let row = ((starty - y) / size / 3) * 2 + 1 / 2;
+  let posOnRow =
+    (x - startx) / Math.sqrt(3) / size +
+    (8 - Math.sqrt(9 - row)) / 2 +
+    1 / 3 -
+    1 / 2;
+  let expPos = 0;
+  for (let i = 1; i < row; i++) {
+    expPos += 9 + 8 - Math.abs(9 - i);
+  }
+  return Math.round(expPos + posOnRow);
 }
 
 function loadPieces() {
   pieceList.forEach((value, key) => {
-    const [first, second] = findCords(key, x, y, radius);
-    console.log(first, second);
+    const [first, second] = findCords(key, startx, starty, size);
     value.img.addEventListener("load", () => {
-      ctx.drawImage(value.img, first, second, radius, radius);
+      ctx.drawImage(value.img, first, second, size, size);
     });
   });
 }
 
 function displayMoves(selectedPiece) {
   selectedPiece.validMoves.forEach((move) => {
-    const [first, second] = findCords(move, x, y, radius);
+    const [first, second] = findCords(move, startx, starty, size);
     ctx.beginPath();
     ctx.arc(
       first + (radius * Math.sqrt(3)) / 3,
@@ -234,22 +248,39 @@ class Pawn2 extends Piece {
   }
 }
 
-const radius = 30;
-const x = 500;
-const y = 800;
-drawField(x, y, 30);
+var selectedPiece = 0;
+const startx = 500;
+const starty = 800;
+const size = 30;
+
+/* document.addEventListener("mousedown", function (e) {
+  const x = e.pageX;
+  const y = e.pageY;
+  var square = findPosFromCords(x, y, startx, starty, size);
+  console.log("clicked at", square);
+  if (selectedPiece == 0 && pieceList.has(square)) {
+    selectedPiece = pieceList.get(square);
+  }
+}); */
+
+function gameLoop() {
+  ctx.clearRect(0, 0, 1600, 900);
+  drawField(startx, starty, 30);
+  loadPieces();
+  if (selectedPiece) {
+    selectedPiece.getMoves();
+    displayMoves(selectedPiece);
+  }
+}
 
 pawn1 = new Pawn1("white");
 pawn2 = new Pawn2("black");
-pawn1_2 = new Pawn1("black");
-pawn1_3 = new Pawn1("white");
 
-pieceList.set(60, pawn1);
-pieceList.set(42, pawn2);
-pieceList.set(100, pawn1_2);
-pieceList.set(54, pawn1_3);
+pieceList.set(42, pawn1);
+pieceList.set(68, pawn2);
+gameLoop();
 
-loadPieces();
-
-pawn2.getMoves(42);
-displayMoves(pawn2);
+for (let i = 1; i < 218; i++) {
+  var [x, y] = findCords(i, startx, starty, size);
+  console.log(findPosFromCords(x, y, startx, starty, size));
+}
